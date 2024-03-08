@@ -1,5 +1,19 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+interface Review {
+  guestId: string;
+  bookingId:String;
+  rating: number;
+  comment: string;
+}
+
+const reviewSchema = new Schema<Review>({
+  guestId: { type: String, required: true },
+  bookingId: { type: String, required: true },
+  rating: { type: Number,required: true },
+  comment: { type: String },
+});
+
 const dailySlotSchema = new Schema({
   date: Date,
   booked: { type: Number, default: 0 },
@@ -75,6 +89,6 @@ const HostSchema = new Schema({
   propertyDocLinks: [String],
   ownerDocLinks: [String],
   roomTypes: [roomTypeSchema],
-});
+  reviews: [reviewSchema],});
 
 export default mongoose.model<HostInterface>("host", HostSchema);

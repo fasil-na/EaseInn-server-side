@@ -253,32 +253,27 @@ export const fetchGuestData = async (
     }
 
     const hostData = await findHosts();
-    console.log(hostData);
-
     const bookings = guestData.bookings;
 
-    // Ensure bookings is defined before mapping
-    const populatedBookings = await Promise.all((bookings ?? []).map(async (booking) => {
-      const hotelData = await hostModel.findById(booking.hotelId); // Assuming your hotel model is named "Hotel"
+    // Check if bookings is defined before mapping
+    if (!bookings) {
+      return res.status(400).json({ error: 'Bookings data is missing for the guest' });
+    }
+
+    // Map over each booking and replace hotelId with hotel name
+    const updatedBookings = await Promise.all(bookings.map(async (booking) => {
+      const hotelData = await findHostByID(booking.hotelId);
+      const hotelName = hotelData?.hotelName || 'Unknown Hotel';
+    
       return {
         ...booking,
-        hotelName: hotelData ? hotelData.hotelName : 'Unknown Hotel',
+        hotelName: hotelName
       };
     }));
-
-    console.log(populatedBookings);
-
-    res.json({
-      guestData: {
-        bookings: populatedBookings,
-      },
-    });
+  
+    res.json(updatedBookings);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
-
-

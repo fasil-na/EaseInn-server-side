@@ -727,64 +727,10 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
 };
 
 
-// export const cancelBooking = async (req: Request, res: Response) => {
-//   try {
-//     const { bookingId } = req.body;
-
-//     const booking = await GuestSchema.findOne({ "bookings._id": bookingId });
-//     console.log(booking);
-
-//     if (!booking || !booking.bookings || !Array.isArray(booking.bookings)) {
-//       return res.status(404).json({ message: "Booking not found" });
-//     }
-
-//     const bookingDetails = booking.bookings.find(b => b && b._id && b._id.toString() === bookingId);
-//     if (!bookingDetails) {
-//       return res.status(404).json({ message: "Booking details not found" });
-//     }
-
-//     const { totalAmount, hotelId } = bookingDetails;
-
-//     const updatedBooking = await GuestSchema.findOneAndUpdate(
-//       { "bookings._id": bookingId },
-//       { $set: { "bookings.$.bookingStatus": "cancelled" } },
-//       { new: true }
-//     );
-
-//     if (!updatedBooking) {
-//       return res.status(404).json({ message: "Booking not found" });
-//     }
-
-//     await HostSchema.findOneAndUpdate(
-//       { _id: hotelId },
-//       { $inc: { hostWallet: -totalAmount } },
-//       { new: true }
-//     );
-
-//     await GuestSchema.findOneAndUpdate(
-//       { "bookings._id": bookingId },
-//       { $inc: { Wallet: totalAmount } },
-//       { new: true }
-//     );
-
-//     res.json({
-//       message: "Booking status updated successfully",
-//       updatedBooking,
-//     });
-//   } catch (error) {
-//     console.error("Error updating booking status:", error);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-
-
-
 
 export const cancelBooking = async (req: Request, res: Response) => {
   try {
     const { bookingId } = req.body;
-    console.log(bookingId);
 
     const booking = await GuestSchema.findOne({ "bookings._id": bookingId });
 
@@ -839,7 +785,6 @@ export const cancelBooking = async (req: Request, res: Response) => {
             if (existingSlotIndex !== -1) {
               room.dailySlots[existingSlotIndex].booked -= booked;
             }
-            // No need to handle the case if the slot doesn't exist, as it was created during booking.
           }
         });
       }
@@ -854,5 +799,52 @@ export const cancelBooking = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error updating booking status:", error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const submitRatingAndReview = async (req: Request, res: Response) => {
+  try {
+    const { bookingIdForReview } = req.body.payload;
+
+    const guest = await GuestSchema.findOne({
+      'bookings._id': bookingIdForReview,
+    });
+
+    if (!guest) {
+      return res.status(404).json({ error: 'Guest not found for the given booking ID' });
+    }
+
+    if (!guest.bookings || !Array.isArray(guest.bookings)) {
+      return res.status(404).json({ error: 'Guest bookings not found or invalid' });
+    }
+
+    const booking = guest.bookings.find(
+      (booking) => booking && booking._id && booking._id.toString() === bookingIdForReview
+    );
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found for the given booking ID' });
+    }
+
+    const hotelId = booking.hotelId;
+    const guestId = guest._id;
+
+    const { selectedStars, review } = req.body.payload;
+
+    await HostSchema.findByIdAndUpdate(
+      hotelId,
+      {
+        $push: {
+          reviews: { guestId, bookingId: bookingIdForReview,rating: selectedStars, comment: review },
+        },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, message: 'Rating and review submitted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };

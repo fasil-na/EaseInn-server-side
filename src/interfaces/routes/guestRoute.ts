@@ -21,6 +21,7 @@ import {
   fetchBookedHotels,
   updateBookingStatus,
   cancelBooking,
+  submitRatingAndReview,
   
 } from "../controllers/guestController";
 import {verifyToken} from '../../middlewares/verifyToken';
@@ -49,6 +50,7 @@ guestRoute.post("/paymentCompleted/:id", verifyToken, paymentCompleted);
 guestRoute.post("/fetchBookedHotels", verifyToken, fetchBookedHotels);
 guestRoute.put("/updateBookingStatus", verifyToken, updateBookingStatus);
 guestRoute.post("/cancelBooking", verifyToken, cancelBooking);
+guestRoute.post("/submitRatingAndReview", verifyToken, submitRatingAndReview);
 
 
 export default guestRoute;
